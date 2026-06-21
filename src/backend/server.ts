@@ -176,15 +176,19 @@ app.get('/analytics', (req, res) => {
     .map(r => ({ query: r.query, count: r.overallCount }));
 
   const now = Date.now();
-  const topRecency = [...allRecords]
-    .sort((a, b) => calculateRecencyScore(b, now) - calculateRecencyScore(a, now))
-    .slice(0, 10)
-    .map(r => ({
-      query: r.query,
-      count: r.overallCount,
-      recentSearches: r.recentTimestamps.length,
-      score: Math.round(calculateRecencyScore(r, now) * 100) / 100
-    }));
+  const scoredRecords = allRecords.map(r => ({
+    record: r,
+    score: calculateRecencyScore(r, now)
+  }));
+  
+  scoredRecords.sort((a, b) => b.score - a.score);
+
+  const topRecency = scoredRecords.slice(0, 10).map(item => ({
+    query: item.record.query,
+    count: item.record.overallCount,
+    recentSearches: item.record.recentTimestamps.length,
+    score: Math.round(item.score * 100) / 100
+  }));
 
   // Hash Ring distribution sample of top overall keys
   const sampleKeys = topOverall.map(item => item.query);
@@ -236,7 +240,7 @@ app.get('*', (req, res) => {
 const server = app.listen(port, () => {
   console.log(`=================================================`);
   console.log(`Search Typeahead System running at http://localhost:${port}`);
-  console.log(`Seeded with 105,000 queries. Happy searching!`);
+  console.log(`Seeded database. Happy searching!`);
   console.log(`=================================================`);
 });
 
