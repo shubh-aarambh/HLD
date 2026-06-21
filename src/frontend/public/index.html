@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Typeahead & Telemetry Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="glow-bg"></div>
+  <div class="app-container">
+    
+    <!-- Header Section -->
+    <header class="app-header">
+      <div class="header-content">
+        <span class="badge">HLD System Design Assignment</span>
+        <h1>Distributed Search Typeahead System</h1>
+        <p class="subtitle">Consistent Hashing Cache Ring, Batch DB Writers, and Recency-Aware Decay Ranking</p>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="dashboard-grid">
+      
+      <!-- LEFT SIDE: Search UI & Controls -->
+      <section class="grid-left">
+        <!-- Search Card -->
+        <div class="card search-card">
+          <div class="card-header">
+            <div class="card-icon">🔍</div>
+            <h2>Search Client</h2>
+          </div>
+          
+          <div class="ranking-toggle-container">
+            <span class="toggle-label">Ranking Mechanism:</span>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="ranking" value="overall" checked id="rank-overall">
+                <span class="custom-radio"></span>
+                Overall Popularity
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="ranking" value="recency" id="rank-recency">
+                <span class="custom-radio"></span>
+                Recency-Boost (Decayed)
+              </label>
+            </div>
+          </div>
+
+          <div class="search-box-container">
+            <input 
+              type="text" 
+              id="search-input" 
+              placeholder="Start typing (e.g. iphone, laptop, python...)" 
+              autocomplete="off"
+            >
+            <button id="search-btn" class="btn btn-primary">Search</button>
+            
+            <!-- Autocomplete suggestions dropdown -->
+            <ul id="suggestions-dropdown" class="suggestions-list hidden"></ul>
+          </div>
+
+          <!-- Dummy API Search Response -->
+          <div id="search-response-container" class="search-response hidden">
+            <span class="response-label">API Response:</span>
+            <code id="search-response-text">{}</code>
+          </div>
+
+          <!-- Cache Routing Debug Footer -->
+          <div id="cache-debug-bar" class="cache-debug-bar">
+            <div class="debug-item">
+              <span class="label">Cache Node:</span>
+              <span id="debug-node" class="value text-highlight">-</span>
+            </div>
+            <div class="debug-item">
+              <span class="label">Cache Status:</span>
+              <span id="debug-status" class="value">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin Control Panel Card -->
+        <div class="card controls-card">
+          <div class="card-header">
+            <div class="card-icon">⚡</div>
+            <h2>System Control Panel</h2>
+          </div>
+          <div class="control-grid">
+            <button id="btn-flush" class="btn btn-secondary">
+              <span class="btn-icon">💾</span> Force DB Flush
+            </button>
+            <button id="btn-clear-cache" class="btn btn-secondary text-danger">
+              <span class="btn-icon">🧹</span> Clear Cache Nodes
+            </button>
+            <button id="btn-inject-traffic" class="btn btn-accent col-span-2">
+              <span class="btn-icon">🚀</span> Inject Simulated Search Traffic (100 Writes)
+            </button>
+          </div>
+          <div class="control-help">
+            <p>💡 <em>Traffic Injection runs a batch of queries in parallel, demonstrating write reduction via the batch buffer and hash-ring key distribution.</em></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT SIDE: Telemetry Dashboard -->
+      <section class="grid-right">
+        
+        <!-- Live Metrics Indicators -->
+        <div class="metrics-strip">
+          <div class="metric-box">
+            <span class="metric-title">P95 Latency</span>
+            <span class="metric-val" id="val-p95">- ms</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-title">Cache Hit Rate</span>
+            <span class="metric-val" id="val-hit-rate">-%</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-title">Writes Saved</span>
+            <span class="metric-val text-success" id="val-writes-saved">-</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-title">Write Reduction</span>
+            <span class="metric-val text-success" id="val-reduction-rate">-%</span>
+          </div>
+        </div>
+
+        <!-- Telemetry Details Grid -->
+        <div class="telemetry-grid">
+          
+          <!-- Storage & Cache Performance Card -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-icon">💾</div>
+              <h2>Data Store & Cache Operations</h2>
+            </div>
+            
+            <div class="stats-list">
+              <div class="stat-row">
+                <span class="stat-name">Database Reads (Hits + Misses)</span>
+                <span class="stat-value" id="val-db-reads">0</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-name">Database Writes (Flush Saves)</span>
+                <span class="stat-value" id="val-db-writes">0</span>
+              </div>
+              <hr class="divider">
+              <div class="stat-row">
+                <span class="stat-name">Total Cache Requests</span>
+                <span class="stat-value" id="val-cache-reqs">0</span>
+              </div>
+              <div class="stat-row font-medium text-highlight">
+                <span class="stat-name">Cache Hits</span>
+                <span class="stat-value" id="val-cache-hits">0</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-name">Cache Misses</span>
+                <span class="stat-value" id="val-cache-misses">0</span>
+              </div>
+            </div>
+
+            <!-- Ring Node Distribution -->
+            <div class="ring-dist-container">
+              <h3>Ring Key Distribution (Top Keys)</h3>
+              <div class="ring-bar-chart" id="ring-bars">
+                <!-- Dynamic bars -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Batch Write Buffer Telemetry Card -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-icon">📥</div>
+              <h2>Batch Write Queue Buffer</h2>
+            </div>
+
+            <div class="stats-list">
+              <div class="stat-row">
+                <span class="stat-name">Buffer Size (Unique Queries)</span>
+                <span class="stat-value text-accent font-bold" id="val-buf-size">0 / 20</span>
+              </div>
+              <div class="stat-row">
+                <span class="stat-name">Total Searches Submitted</span>
+                <span class="stat-value" id="val-searches-sub">0</span>
+              </div>
+            </div>
+
+            <div class="buffer-viewer">
+              <h3>Current Buffer Contents:</h3>
+              <div class="buffer-list-container">
+                <ul id="buffer-items-list" class="buffer-items-list">
+                  <li class="empty-msg">Buffer is empty. Submit searches to fill.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+
+        <!-- Trending Queries Card (Overall vs Recency) -->
+        <div class="card trending-card">
+          <div class="card-header">
+            <div class="card-icon">📈</div>
+            <h2>Trending Searches (Real-Time API Comparison)</h2>
+          </div>
+
+          <div class="trending-columns-container">
+            <!-- Column 1: Overall Popularity -->
+            <div class="trending-col">
+              <div class="col-header font-bold text-highlight">
+                🏆 Historical Popularity (overallCount)
+              </div>
+              <ol id="trending-list-overall" class="trending-list">
+                <li class="loading-item">Loading trending queries...</li>
+              </ol>
+            </div>
+
+            <!-- Column 2: Recency Boosted -->
+            <div class="trending-col">
+              <div class="col-header font-bold text-accent">
+                🔥 Recency-Aware Score (decayed)
+              </div>
+              <ol id="trending-list-recency" class="trending-list">
+                <li class="loading-item">Loading trending queries...</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer-bar">
+      <p>Search Typeahead HLD Assignment. Hand-crafted in TypeScript with ❤️</p>
+    </footer>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

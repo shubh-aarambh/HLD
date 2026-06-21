@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  typeahead-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: search-typeahead-service
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    volumes:
+      - ./data:/usr/src/app/data
+    restart: unless-stopped
