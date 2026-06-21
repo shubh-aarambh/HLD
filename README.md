@@ -82,11 +82,11 @@ This is the easiest method since it installs Node, seeds the database, builds de
    ```
 
 #### Seeding the Dataset
-Before launching the server, generate the 100,000+ item seed dataset:
+Before launching the server, generate the 333,000+ item seed dataset:
 ```bash
 npm run seed
 ```
-This generates `data/seed_dataset.json` containing 105,000 unique queries modeled on a Zipfian distribution.
+This generates `data/seed_dataset.json` containing 333,341 unique queries based on Peter Norvig's unigram frequency list.
 
 #### Running the Application
 Start the server and frontend host:
@@ -99,12 +99,12 @@ Open [http://localhost:3000](http://localhost:3000) in your web browser.
 
 ## Dataset Report
 
-- **Total Size**: 105,000 unique query strings.
-- **Vocabulary Source**: Generated using programmatic combinations of popular electronics brands (Apple, Sony, Tesla), consumer goods (shoes, hoodie, monitor), search verbs (how to clean, buy, comparison of), and modifiers (gaming, cheap, pro).
-- **Distribution Model**: **Zipf's Law** ($Count_i = \frac{C}{(i+1)^\alpha}$).
-  - A small set of queries (e.g. `"iphone"`, `"java tutorial"`, `"python"`) have massive counts (up to 500,000 searches) representing high-volume traffic.
-  - A long tail of over 100,000 queries have small, realistic search frequencies (5 to 50 searches).
-  - Allows us to realistically simulate production-grade search traffic.
+- **Total Size**: 333,341 unique query strings.
+- **Vocabulary Source**: Peter Norvig's compilation of the 1/3 million most frequent English words from the Google Web Trillion Word Corpus, along with a few modern search queries (e.g., `"iphone 15"`, `"chatgpt login"`).
+- **Distribution Model**: Real-world unigram frequencies.
+  - A small set of queries (e.g. `"the"`, `"of"`, `"chatgpt"`) have massive counts (up to 2.5 million searches) representing high-volume traffic.
+  - A massive long tail of over 300,000 queries have small, realistic search frequencies.
+  - Allows us to realistically simulate production-grade search traffic based on actual internet usage.
 
 ---
 
@@ -165,7 +165,7 @@ Synchronous database writes for every single search submission choke disk I/O an
 - **Result**: **99% reduction** in database disk write pressure.
 
 ### 2. Autocomplete Suggestions Read Latency
-- **Primary DB In-Memory Index**: Matching prefixes against the 105,000 query table in memory takes **1.5ms - 3.5ms**.
+- **Primary DB In-Memory Index**: Matching prefixes against the 333,341 query table in memory takes **1.5ms - 4.5ms**.
 - **Cache Hit Latency**: Fetching cached prefix suggestion lists from the consistent hashing nodes takes **< 0.5ms** (effectively instantaneous).
 - **P95 Latency**: Consolidated P95 latency is **< 1ms** under active cache hit conditions.
 
